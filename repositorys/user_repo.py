@@ -156,26 +156,45 @@ class UserRepository:
     # ------------------------------------------------------------------
     # Email verification
     # ------------------------------------------------------------------
-    async def create_email_verification_token(self, user_id: uuid.UUID) -> str:
+    async def create_email_verification_token(self, user_id: uuid.UUID, token_value: str) -> str:
+        """Store an OTP or URL token for email verification."""
         # Purge old tokens first
         await self.db.execute(
             delete(EmailVerificationToken).where(EmailVerificationToken.user_id == user_id)
         )
-        raw = generate_secure_token()
         token = EmailVerificationToken(
             user_id=user_id,
-            token=raw,
+            token=token_value,
             expires_at=datetime.now(timezone.utc) + timedelta(hours=24),
         )
         self.db.add(token)
         await self.db.flush()
-        return raw
+        return token_value
 
     async def consume_email_verification_token(self, raw_token: str) -> Optional[uuid.UUID]:
-        """Returns the user_id if valid, then deletes the token."""
+        """Returns the user_id if valid (URL-token path), then deletes the token."""
         result = await self.db.execute(
             select(EmailVerificationToken).where(
                 EmailVerificationToken.token == raw_token,
+                EmailVerificationToken.expires_at > datetime.now(timezone.utc),
+            )
+        )
+        ev = result.scalar_one_or_none()
+        if not ev:
+            return None
+        user_id = ev.user_id
+        await self.db.delete(ev)
+        await self.db.flush()
+        return user_id
+
+    async def consume_email_otp(self, email: str, otp: str) -> Optional[uuid.UUID]:
+        """Verify a numeric OTP by joining with users table."""
+        result = await self.db.execute(
+            select(EmailVerificationToken)
+            .join(User, User.id == EmailVerificationToken.user_id)
+            .where(
+                User.email == email.lower(),
+                EmailVerificationToken.token == otp,
                 EmailVerificationToken.expires_at > datetime.now(timezone.utc),
             )
         )

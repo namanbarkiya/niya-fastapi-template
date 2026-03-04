@@ -22,6 +22,8 @@ from models.user_model import (
     SignInRequest,
     SignUpRequest,
     UpdateProfileRequest,
+    VerifyOtpRequest,
+    ResendOtpRequest,
 )
 from services.user_service import UserService
 
@@ -91,12 +93,32 @@ async def refresh(
     return await svc.refresh_tokens(raw_refresh, response)
 
 
+@auth_router.post("/verify-otp")
+async def verify_otp(
+    payload: VerifyOtpRequest,
+    db: AsyncSession = Depends(get_db),
+):
+    """Verify email with a 6-digit OTP code."""
+    svc = UserService(db)
+    return await svc.verify_otp(payload.email, payload.otp)
+
+
+@auth_router.post("/resend-otp")
+async def resend_otp(
+    payload: ResendOtpRequest,
+    db: AsyncSession = Depends(get_db),
+):
+    """Resend the email verification OTP."""
+    svc = UserService(db)
+    return await svc.resend_verification_otp(payload.email)
+
+
 @auth_router.get("/confirm-email")
 async def confirm_email(
     token: str,
     db: AsyncSession = Depends(get_db),
 ):
-    """Confirm email address via token sent by email."""
+    """Confirm email address via URL token (legacy/fallback)."""
     svc = UserService(db)
     return await svc.confirm_email(token)
 

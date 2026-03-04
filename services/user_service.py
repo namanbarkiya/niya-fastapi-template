@@ -9,6 +9,12 @@ from fastapi import Response
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from config.settings import settings
+from core.security import generate_otp
+from services.email_service import (
+    send_password_reset_email,
+    send_verification_otp,
+    send_welcome_email,
+)
 from core.exceptions import (
     AuthenticationError,
     ConflictError,
@@ -70,15 +76,16 @@ class UserService:
         if payload.name:
             await self.repo.update_profile(user.id, {"full_name": payload.name})
 
-        # Create e-mail verification token (caller can send the email)
-        verification_token = await self.repo.create_email_verification_token(user.id)
+        # Generate OTP and send verification email
+        otp = generate_otp()
+        await self.repo.create_email_verification_token(user.id, otp)
+        send_verification_otp(user.email, otp)
 
         logger.info(f"New user registered: {user.id}")
         return {
             "status": "success",
-            "message": "Account created. Please verify your email address.",
+            "message": "Account created. Please check your email for the verification code.",
             "user": _user_to_response(user),
-            "verification_token": verification_token,  # pass to email sender
         }
 
     # ------------------------------------------------------------------
@@ -154,7 +161,23 @@ class UserService:
         )
 
     # ------------------------------------------------------------------
-    # Email confirmation
+    # Email confirmation (OTP — 6 digits)
+    # ------------------------------------------------------------------
+    async def verify_otp(self, email: str, otp: str) -> dict:
+        user_id = await self.repo.consume_email_otp(email, otp)
+        if not user_id:
+            raise ValidationError("OTP is invalid or expired")
+        await self.repo.verify_email(user_id)
+        user = await self.repo.get_by_id(user_id)
+        if user:
+            profile = await self.repo.get_profile(user_id)
+            name = profile.full_name if profile else None
+            send_welcome_email(user.email, name)
+        logger.info(f"Email verified via OTP for user {user_id}")
+        return {"status": "success", "message": "Email verified successfully"}
+
+    # ------------------------------------------------------------------
+    # Email confirmation (URL token — legacy / API route fallback)
     # ------------------------------------------------------------------
     async def confirm_email(self, token: str) -> dict:
         user_id = await self.repo.consume_email_verification_token(token)
@@ -165,6 +188,21 @@ class UserService:
         return {"status": "success", "message": "Email verified successfully"}
 
     # ------------------------------------------------------------------
+    # Resend OTP
+    # ------------------------------------------------------------------
+    async def resend_verification_otp(self, email: str) -> dict:
+        user = await self.repo.get_by_email(email)
+        # Always return success to prevent enumeration
+        if user and not user.email_verified:
+            otp = generate_otp()
+            await self.repo.create_email_verification_token(user.id, otp)
+            send_verification_otp(user.email, otp)
+        return {
+            "status": "success",
+            "message": "If this email is pending verification, a new code has been sent.",
+        }
+
+    # ------------------------------------------------------------------
     # Forgot password
     # ------------------------------------------------------------------
     async def forgot_password(self, email: str) -> dict:
@@ -172,7 +210,7 @@ class UserService:
         # Always return success to prevent user enumeration
         if user:
             token = await self.repo.create_password_reset_token(user.id)
-            # TODO: send email with f"{settings.app_base_url}/reset-password?token={token}"
+            send_password_reset_email(user.email, token)
             logger.info(f"Password reset requested for {email}")
         return {
             "status": "success",

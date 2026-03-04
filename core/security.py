@@ -69,5 +69,11 @@ def decode_access_token(token: str) -> dict[str, Any]:
 # Misc secure token generation (email verify / password reset)
 # ---------------------------------------------------------------------------
 def generate_secure_token(nbytes: int = 32) -> str:
-    """URL-safe random token for email verification and password reset."""
+    """URL-safe random token for password reset links."""
     return secrets.token_urlsafe(nbytes)
+
+
+def generate_otp(digits: int = 6) -> str:
+    """Cryptographically secure numeric OTP (zero-padded to `digits` length)."""
+    upper = 10 ** digits
+    return str(secrets.randbelow(upper)).zfill(digits)
