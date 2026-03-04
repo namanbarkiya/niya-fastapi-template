@@ -1,126 +1,231 @@
-from fastapi import Request, Response
-from typing import Dict, Any, Optional
+"""
+UserService — business logic layer between controllers and repository.
+"""
 import logging
-from models.user_model import EmailModel, UserModel
+from typing import Optional
+from uuid import UUID
+
+from fastapi import Response
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from config.settings import settings
+from core.exceptions import (
+    AuthenticationError,
+    ConflictError,
+    NotFoundError,
+    ValidationError,
+)
+from core.security import (
+    create_access_token,
+    create_refresh_token_value,
+    hash_password,
+    verify_password,
+)
+from middleware.auth import clear_auth_cookies, set_auth_cookies
+from models.db_models import User, UserProfile
+from models.user_model import (
+    AuthResponse,
+    MeResponse,
+    ProfileResponse,
+    SignInRequest,
+    SignUpRequest,
+    UpdateProfileRequest,
+    UserResponse,
+)
 from repositorys.user_repo import UserRepository
-from middleware.auth import auth_middleware
-from core.exceptions import AuthenticationError, ValidationError
 
 logger = logging.getLogger(__name__)
 
 
+def _user_to_response(user: User) -> UserResponse:
+    return UserResponse.model_validate(user)
+
+
+def _profile_to_response(profile: Optional[UserProfile]) -> Optional[ProfileResponse]:
+    if profile is None:
+        return None
+    return ProfileResponse.model_validate(profile)
+
+
 class UserService:
-    """User service with proper business logic and error handling"""
-    
-    def __init__(self, user_repository: UserRepository) -> None:
-        self.user_repository = user_repository
-    
-    def sign_up(self, user: UserModel) -> Dict[str, Any]:
-        """Sign up a new user with validation"""
-        try:
-            # Validate email format
-            if not self._is_valid_email(user.email):
-                raise ValidationError("Invalid email format")
-            
-            # Validate password strength
-            if not self._is_valid_password(user.password):
-                raise ValidationError("Password must be at least 8 characters long")
-            
-            user_data = {"email": user.email, "password": user.password}
-            result = self.user_repository.sign_up_user(user_data)
-            logger.info(f"User service: Sign up successful for {user.email}")
-            return result
-        except Exception as e:
-            logger.error(f"User service: Sign up failed for {user.email}: {str(e)}")
-            raise
-    
-    def sign_in(self, user: UserModel, response: Response) -> Dict[str, Any]:
-        """Sign in user with secure cookie handling"""
-        try:
-            user_data = {"email": user.email, "password": user.password}
-            result = self.user_repository.sign_in_user(user_data)
-            
-            # Set secure cookies only if authentication was successful
-            if result.get("status") == "success" and result.get("data"):
-                session_data = result["data"]
-                if hasattr(session_data, 'session') and session_data.session:
-                    auth_middleware.set_auth_cookies(response, {
-                        "access_token": session_data.session.access_token
-                    })
-                    logger.info(f"User service: Sign in successful for {user.email}")
-                else:
-                    logger.warning(f"User service: No session data for {user.email}")
-            
-            return result
-        except Exception as e:
-            logger.error(f"User service: Sign in failed for {user.email}: {str(e)}")
-            raise
-    
-    def sign_out(self, response: Response) -> Dict[str, str]:
-        """Sign out user and clear cookies"""
-        try:
-            result = self.user_repository.sign_out()
-            auth_middleware.clear_auth_cookies(response)
-            logger.info("User service: Sign out successful")
-            return result
-        except Exception as e:
-            logger.error(f"User service: Sign out failed: {str(e)}")
-            raise
-    
-    def reset_password(self, email: EmailModel) -> Dict[str, Any]:
-        """Reset password with validation"""
-        try:
-            if not self._is_valid_email(email.email):
-                raise ValidationError("Invalid email format")
-            
-            result = self.user_repository.reset_password(email.email)
-            logger.info(f"User service: Password reset initiated for {email.email}")
-            return result
-        except Exception as e:
-            logger.error(f"User service: Password reset failed for {email.email}: {str(e)}")
-            raise
-    
-    def change_password(self, new_password: str, response: Response) -> Dict[str, Any]:
-        """Change password with validation"""
-        try:
-            if not self._is_valid_password(new_password):
-                raise ValidationError("Password must be at least 8 characters long")
-            
-            result = self.user_repository.change_password(new_password)
-            auth_middleware.clear_auth_cookies(response)
-            logger.info("User service: Password changed successfully")
-            return result
-        except Exception as e:
-            logger.error(f"User service: Password change failed: {str(e)}")
-            raise
-    
-    def get_user_profile(self, user_id: str) -> Optional[Dict[str, Any]]:
-        """Get user profile"""
-        try:
-            profile = self.user_repository.get_user_profile(user_id)
-            if profile:
-                logger.info(f"User service: Profile retrieved for {user_id}")
-            return profile
-        except Exception as e:
-            logger.error(f"User service: Failed to get profile for {user_id}: {str(e)}")
-            return None
-    
-    def update_user_profile(self, user_id: str, profile_data: Dict[str, Any]) -> Dict[str, Any]:
-        """Update user profile"""
-        try:
-            result = self.user_repository.update_user_profile(user_id, profile_data)
-            logger.info(f"User service: Profile updated for {user_id}")
-            return result
-        except Exception as e:
-            logger.error(f"User service: Failed to update profile for {user_id}: {str(e)}")
-            raise
-    
-    def _is_valid_email(self, email: str) -> bool:
-        """Validate email format"""
-        import re
-        pattern = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
-        return re.match(pattern, email) is not None
-    
-    def _is_valid_password(self, password: str) -> bool:
-        """Validate password strength"""
-        return len(password) >= 8
+    def __init__(self, db: AsyncSession) -> None:
+        self.repo = UserRepository(db)
+
+    # ------------------------------------------------------------------
+    # Sign up
+    # ------------------------------------------------------------------
+    async def sign_up(self, payload: SignUpRequest) -> dict:
+        existing = await self.repo.get_by_email(payload.email)
+        if existing:
+            raise ConflictError("An account with this email already exists")
+
+        pw_hash = hash_password(payload.password)
+        user = await self.repo.create_user(
+            email=payload.email,
+            password_hash=pw_hash,
+            email_verified=False,
+        )
+
+        # Seed name into profile if provided (profile was just created in create_user)
+        if payload.name:
+            await self.repo.update_profile(user.id, {"full_name": payload.name})
+
+        # Create e-mail verification token (caller can send the email)
+        verification_token = await self.repo.create_email_verification_token(user.id)
+
+        logger.info(f"New user registered: {user.id}")
+        return {
+            "status": "success",
+            "message": "Account created. Please verify your email address.",
+            "user": _user_to_response(user),
+            "verification_token": verification_token,  # pass to email sender
+        }
+
+    # ------------------------------------------------------------------
+    # Sign in
+    # ------------------------------------------------------------------
+    async def sign_in(self, payload: SignInRequest, response: Response) -> AuthResponse:
+        user = await self.repo.get_by_email(payload.email)
+        if not user or not user.password_hash:
+            raise AuthenticationError("Invalid email or password")
+        if not verify_password(payload.password, user.password_hash):
+            raise AuthenticationError("Invalid email or password")
+        if not user.is_active:
+            raise AuthenticationError("This account has been deactivated")
+
+        await self.repo.update_last_login(user.id)
+
+        access_token = create_access_token(subject=str(user.id))
+        raw_refresh = create_refresh_token_value()
+        await self.repo.create_refresh_token(
+            user_id=user.id,
+            raw_token=raw_refresh,
+            expire_days=settings.refresh_token_expire_days,
+        )
+
+        set_auth_cookies(response, access_token, raw_refresh)
+        logger.info(f"User signed in: {user.id}")
+
+        return AuthResponse(
+            access_token=access_token,
+            user=_user_to_response(user),
+            profile=_profile_to_response(user.profile),
+        )
+
+    # ------------------------------------------------------------------
+    # Sign out
+    # ------------------------------------------------------------------
+    async def sign_out(self, raw_refresh_token: Optional[str], response: Response) -> dict:
+        if raw_refresh_token:
+            await self.repo.revoke_refresh_token(raw_refresh_token)
+        clear_auth_cookies(response)
+        logger.info("User signed out")
+        return {"status": "success", "message": "Signed out successfully"}
+
+    # ------------------------------------------------------------------
+    # Refresh access token
+    # ------------------------------------------------------------------
+    async def refresh_tokens(self, raw_refresh: str, response: Response) -> AuthResponse:
+        token_record = await self.repo.get_refresh_token(raw_refresh)
+        if not token_record:
+            raise AuthenticationError("Refresh token is invalid or expired")
+
+        user = token_record.user
+        if not user.is_active:
+            raise AuthenticationError("This account has been deactivated")
+
+        # Rotate: revoke old, issue new
+        await self.repo.revoke_refresh_token(raw_refresh)
+        new_access = create_access_token(subject=str(user.id))
+        new_raw_refresh = create_refresh_token_value()
+        await self.repo.create_refresh_token(
+            user_id=user.id,
+            raw_token=new_raw_refresh,
+            expire_days=settings.refresh_token_expire_days,
+        )
+
+        set_auth_cookies(response, new_access, new_raw_refresh)
+        await self.repo.update_last_login(user.id)
+
+        return AuthResponse(
+            access_token=new_access,
+            user=_user_to_response(user),
+            profile=_profile_to_response(user.profile),
+        )
+
+    # ------------------------------------------------------------------
+    # Email confirmation
+    # ------------------------------------------------------------------
+    async def confirm_email(self, token: str) -> dict:
+        user_id = await self.repo.consume_email_verification_token(token)
+        if not user_id:
+            raise ValidationError("Email verification token is invalid or expired")
+        await self.repo.verify_email(user_id)
+        logger.info(f"Email verified for user {user_id}")
+        return {"status": "success", "message": "Email verified successfully"}
+
+    # ------------------------------------------------------------------
+    # Forgot password
+    # ------------------------------------------------------------------
+    async def forgot_password(self, email: str) -> dict:
+        user = await self.repo.get_by_email(email)
+        # Always return success to prevent user enumeration
+        if user:
+            token = await self.repo.create_password_reset_token(user.id)
+            # TODO: send email with f"{settings.app_base_url}/reset-password?token={token}"
+            logger.info(f"Password reset requested for {email}")
+        return {
+            "status": "success",
+            "message": "If this email is registered you will receive reset instructions.",
+        }
+
+    # ------------------------------------------------------------------
+    # Reset password
+    # ------------------------------------------------------------------
+    async def reset_password(self, token: str, new_password: str) -> dict:
+        user_id = await self.repo.consume_password_reset_token(token)
+        if not user_id:
+            raise ValidationError("Password reset token is invalid or expired")
+        new_hash = hash_password(new_password)
+        await self.repo.update_password(user_id, new_hash)
+        await self.repo.revoke_all_user_tokens(user_id)
+        logger.info(f"Password reset for user {user_id}")
+        return {"status": "success", "message": "Password updated successfully"}
+
+    # ------------------------------------------------------------------
+    # Change password (authenticated)
+    # ------------------------------------------------------------------
+    async def change_password(
+        self, user: User, current_password: str, new_password: str, response: Response
+    ) -> dict:
+        if not user.password_hash or not verify_password(current_password, user.password_hash):
+            raise AuthenticationError("Current password is incorrect")
+        new_hash = hash_password(new_password)
+        await self.repo.update_password(user.id, new_hash)
+        await self.repo.revoke_all_user_tokens(user.id)
+        clear_auth_cookies(response)
+        logger.info(f"Password changed for user {user.id}")
+        return {"status": "success", "message": "Password changed successfully. Please sign in again."}
+
+    # ------------------------------------------------------------------
+    # Get me
+    # ------------------------------------------------------------------
+    async def get_me(self, user: User) -> MeResponse:
+        await self.repo.update_last_seen(user.id)
+        return MeResponse(
+            user=_user_to_response(user),
+            profile=_profile_to_response(user.profile),
+        )
+
+    # ------------------------------------------------------------------
+    # Update profile
+    # ------------------------------------------------------------------
+    async def update_profile(self, user: User, payload: UpdateProfileRequest) -> MeResponse:
+        updates = payload.model_dump(exclude_none=True)
+        if updates:
+            await self.repo.update_profile(user.id, updates)
+        updated_profile = await self.repo.get_profile(user.id)
+        return MeResponse(
+            user=_user_to_response(user),
+            profile=_profile_to_response(updated_profile),
+        )

@@ -1,10 +1,23 @@
 fastapi==0.116.1
 uvicorn[standard]==0.35.0
-supabase==2.0.2
+
+# PostgreSQL async driver + ORM
+asyncpg==0.29.0
+SQLAlchemy[asyncio]==2.0.36
+greenlet==3.1.1
+
+# Auth: JWT + password hashing
+python-jose[cryptography]==3.3.0
+bcrypt==4.0.1
+
+# Environment & settings
 python-dotenv==1.1.1
 pydantic==2.11.7
 pydantic[email]==2.11.7
 pydantic-settings==2.2.1
+
+# Misc
 python-multipart==0.0.20
 websockets==11.0.3
-email-validator==2.1.0 
+email-validator==2.1.0
+httpx==0.27.0
