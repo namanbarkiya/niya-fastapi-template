@@ -1,0 +1,12 @@
+{
+  "instructions": [
+    "Always read CLAUDE.md before making any changes",
+    "Never create cross-schema foreign keys between shared and product schemas",
+    "Never write JOINs across schemas - use two separate queries through the repo layer",
+    "All primary keys must be UUIDs",
+    "All new models must specify __table_args__ = {\"schema\": \"<schema_name>\"}",
+    "Product modules can only import from app/core/ and app/shared/ - never from other products",
+    "Use async/await for all database operations",
+    "All timestamps must use DateTime(timezone=True) in SQLAlchemy and TIMESTAMPTZ in SQL"
+  ]
+}

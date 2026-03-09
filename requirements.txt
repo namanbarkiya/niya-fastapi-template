@@ -6,6 +6,9 @@ asyncpg==0.29.0
 SQLAlchemy[asyncio]==2.0.36
 greenlet==3.1.1
 
+# Migrations
+alembic==1.14.1
+
 # Auth: JWT + password hashing
 python-jose[cryptography]==3.3.0
 bcrypt==4.0.1
@@ -15,6 +18,10 @@ python-dotenv==1.1.1
 pydantic==2.11.7
 pydantic[email]==2.11.7
 pydantic-settings==2.2.1
+
+# Payment providers
+razorpay==1.4.2
+python-dateutil==2.9.0
 
 # Misc
 python-multipart==0.0.20

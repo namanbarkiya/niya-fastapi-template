@@ -1,816 +1,1173 @@
 {
-    	"info": {
-		"_postman_id": "niya-api-collection",
-		"name": "Niya API",
-		"description": "Complete API collection for Niya FastAPI Template with Supabase authentication, rate limiting, and user management features.",
-		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
-		"_exporter_id": "niya-api"
-	},
-    "item": [
+  "info": {
+    "_postman_id": "niya-fastapi-v3",
+    "name": "Niya FastAPI",
+    "description": "Multi-product FastAPI backend — Auth, Users, Orgs, Billing, Notifications, Admin Dashboard, Product Alpha, Taskboard.\n\n## Setup\n1. Import this collection and the environment file.\n2. Set `base_url` in the environment (default: http://localhost:8000).\n3. Run **Register** → **Verify Email** → **Login** — the `access_token` variable is set automatically after login.\n4. All subsequent requests use `{{access_token}}` in the Authorization header.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "base_url", "value": "http://localhost:8000", "type": "string" },
+    { "key": "access_token", "value": "", "type": "string" },
+    { "key": "org_id", "value": "", "type": "string" },
+    { "key": "resource_id", "value": "", "type": "string" },
+    { "key": "project_id", "value": "", "type": "string" },
+    { "key": "task_id", "value": "", "type": "string" },
+    { "key": "invoice_id", "value": "", "type": "string" },
+    { "key": "notification_id", "value": "", "type": "string" }
+  ],
+  "item": [
+    {
+      "name": "System",
+      "item": [
         {
-            "name": "Health & Status",
-            "item": [
-                {
-                    "name": "Health Check",
-                    "request": {
-                        "method": "GET",
-                        "header": [],
-                        "url": {
-                            "raw": "{{base_url}}/health",
-                            "host": ["{{base_url}}"],
-                            "path": ["health"]
-                        },
-                        "description": "Check if the API is running and healthy"
-                    },
-                    "response": [
-                        {
-                            "name": "Success Response",
-                            "originalRequest": {
-                                "method": "GET",
-                                "header": [],
-                                "url": {
-                                    "raw": "{{base_url}}/health",
-                                    "host": ["{{base_url}}"],
-                                    "path": ["health"]
-                                }
-                            },
-                            "status": "OK",
-                            "code": 200,
-                            "_postman_previewlanguage": "json",
-                            "header": [
-                                {
-                                    "key": "Content-Type",
-                                    "value": "application/json"
-                                }
-                            ],
-                            "cookie": [],
-                            "body": "{\n    \"status\": \"healthy\",\n    \"message\": \"API is running\"\n}"
-                        }
-                    ]
-                },
-                {
-                    "name": "Root Endpoint",
-                    "request": {
-                        "method": "GET",
-                        "header": [],
-                        "url": {
-                            "raw": "{{base_url}}/",
-                            "host": ["{{base_url}}"],
-                            "path": [""]
-                        },
-                        "description": "Get API information and version"
-                    },
-                    "response": [
-                        {
-                            "name": "Success Response",
-                            "originalRequest": {
-                                "method": "GET",
-                                "header": [],
-                                "url": {
-                                    "raw": "{{base_url}}/",
-                                    "host": ["{{base_url}}"],
-                                    "path": [""]
-                                }
-                            },
-                            "status": "OK",
-                            "code": 200,
-                            "_postman_previewlanguage": "json",
-                            "header": [
-                                {
-                                    "key": "Content-Type",
-                                    "value": "application/json"
-                                }
-                            ],
-                            "cookie": [],
-                            					"body": "{\n    \"status\": \"ok\",\n    \"data\": \"Niya API\",\n    \"version\": \"1.0.0\"\n}"
-                        }
-                    ]
-                }
-            ],
-            "description": "Health check and status endpoints"
+          "name": "Health Check",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/health",
+              "host": ["{{base_url}}"],
+              "path": ["health"]
+            },
+            "description": "Returns database status, product list, and version."
+          }
         },
         {
-            "name": "Authentication",
-            "item": [
-                {
-                    "name": "User Sign Up",
-                    "request": {
-                        "method": "POST",
-                        "header": [
-                            {
-                                "key": "Content-Type",
-                                "value": "application/json"
-                            }
-                        ],
-                        "body": {
-                            "mode": "raw",
-                            "raw": "{\n    \"email\": \"user@example.com\",\n    \"password\": \"securepassword123\"\n}",
-                            "options": {
-                                "raw": {
-                                    "language": "json"
-                                }
-                            }
-                        },
-                        "url": {
-                            "raw": "{{base_url}}/api/v1/signup",
-                            "host": ["{{base_url}}"],
-                            "path": ["api", "v1", "signup"]
-                        },
-                        "description": "Register a new user account\n\n**Requirements:**\n- Email must be valid format\n- Password must be at least 8 characters\n\n**Response:**\n- Success: User account created\n- Error: Validation or database errors"
-                    },
-                    "response": [
-                        {
-                            "name": "Success Response",
-                            "originalRequest": {
-                                "method": "POST",
-                                "header": [
-                                    {
-                                        "key": "Content-Type",
-                                        "value": "application/json"
-                                    }
-                                ],
-                                "body": {
-                                    "mode": "raw",
-                                    "raw": "{\n    \"email\": \"user@example.com\",\n    \"password\": \"securepassword123\"\n}",
-                                    "options": {
-                                        "raw": {
-                                            "language": "json"
-                                        }
-                                    }
-                                },
-                                "url": {
-                                    "raw": "{{base_url}}/api/v1/signup",
-                                    "host": ["{{base_url}}"],
-                                    "path": ["api", "v1", "signup"]
-                                }
-                            },
-                            "status": "OK",
-                            "code": 200,
-                            "_postman_previewlanguage": "json",
-                            "header": [
-                                {
-                                    "key": "Content-Type",
-                                    "value": "application/json"
-                                }
-                            ],
-                            "cookie": [],
-                            "body": "{\n    \"status\": \"success\",\n    \"data\": {\n        \"user\": {\n            \"id\": \"uuid-here\",\n            \"email\": \"user@example.com\",\n            \"created_at\": \"2024-01-01T00:00:00Z\"\n        },\n        \"session\": null\n    }\n}"
-                        },
-                        {
-                            "name": "Validation Error",
-                            "originalRequest": {
-                                "method": "POST",
-                                "header": [
-                                    {
-                                        "key": "Content-Type",
-                                        "value": "application/json"
-                                    }
-                                ],
-                                "body": {
-                                    "mode": "raw",
-                                    "raw": "{\n    \"email\": \"invalid-email\",\n    \"password\": \"123\"\n}",
-                                    "options": {
-                                        "raw": {
-                                            "language": "json"
-                                        }
-                                    }
-                                },
-                                "url": {
-                                    "raw": "{{base_url}}/api/v1/signup",
-                                    "host": ["{{base_url}}"],
-                                    "path": ["api", "v1", "signup"]
-                                }
-                            },
-                            "status": "Bad Request",
-                            "code": 400,
-                            "_postman_previewlanguage": "json",
-                            "header": [
-                                {
-                                    "key": "Content-Type",
-                                    "value": "application/json"
-                                }
-                            ],
-                            "cookie": [],
-                            "body": "{\n    \"status\": \"fail\",\n    \"data\": \"Invalid email format\"\n}"
-                        }
-                    ]
-                },
-                {
-                    "name": "User Sign In",
-                    "request": {
-                        "method": "POST",
-                        "header": [
-                            {
-                                "key": "Content-Type",
-                                "value": "application/json"
-                            }
-                        ],
-                        "body": {
-                            "mode": "raw",
-                            "raw": "{\n    \"email\": \"user@example.com\",\n    \"password\": \"securepassword123\"\n}",
-                            "options": {
-                                "raw": {
-                                    "language": "json"
-                                }
-                            }
-                        },
-                        "url": {
-                            "raw": "{{base_url}}/api/v1/signin",
-                            "host": ["{{base_url}}"],
-                            "path": ["api", "v1", "signin"]
-                        },
-                        "description": "Authenticate user and create session\n\n**Features:**\n- Sets secure HttpOnly cookies\n- Returns user session data\n- Handles authentication errors\n\n**Cookies Set:**\n- access_token: JWT token for authentication\n- type: Session type identifier"
-                    },
-                    "response": [
-                        {
-                            "name": "Success Response",
-                            "originalRequest": {
-                                "method": "POST",
-                                "header": [
-                                    {
-                                        "key": "Content-Type",
-                                        "value": "application/json"
-                                    }
-                                ],
-                                "body": {
-                                    "mode": "raw",
-                                    "raw": "{\n    \"email\": \"user@example.com\",\n    \"password\": \"securepassword123\"\n}",
-                                    "options": {
-                                        "raw": {
-                                            "language": "json"
-                                        }
-                                    }
-                                },
-                                "url": {
-                                    "raw": "{{base_url}}/api/v1/signin",
-                                    "host": ["{{base_url}}"],
-                                    "path": ["api", "v1", "signin"]
-                                }
-                            },
-                            "status": "OK",
-                            "code": 200,
-                            "_postman_previewlanguage": "json",
-                            "header": [
-                                {
-                                    "key": "Content-Type",
-                                    "value": "application/json"
-                                },
-                                {
-                                    "key": "Set-Cookie",
-                                    "value": "access_token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...; HttpOnly; Secure; SameSite=Lax"
-                                }
-                            ],
-                            "cookie": [
-                                {
-                                    "name": "access_token",
-                                    "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
-                                    "httpOnly": true,
-                                    "secure": true,
-                                    "sameSite": "lax"
-                                }
-                            ],
-                            "body": "{\n    \"status\": \"success\",\n    \"data\": {\n        \"user\": {\n            \"id\": \"uuid-here\",\n            \"email\": \"user@example.com\",\n            \"created_at\": \"2024-01-01T00:00:00Z\"\n        },\n        \"session\": {\n            \"access_token\": \"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...\",\n            \"refresh_token\": \"refresh-token-here\",\n            \"expires_in\": 3600\n        }\n    }\n}"
-                        },
-                        {
-                            "name": "Authentication Error",
-                            "originalRequest": {
-                                "method": "POST",
-                                "header": [
-                                    {
-                                        "key": "Content-Type",
-                                        "value": "application/json"
-                                    }
-                                ],
-                                "body": {
-                                    "mode": "raw",
-                                    "raw": "{\n    \"email\": \"user@example.com\",\n    \"password\": \"wrongpassword\"\n}",
-                                    "options": {
-                                        "raw": {
-                                            "language": "json"
-                                        }
-                                    }
-                                },
-                                "url": {
-                                    "raw": "{{base_url}}/api/v1/signin",
-                                    "host": ["{{base_url}}"],
-                                    "path": ["api", "v1", "signin"]
-                                }
-                            },
-                            "status": "Unauthorized",
-                            "code": 401,
-                            "_postman_previewlanguage": "json",
-                            "header": [
-                                {
-                                    "key": "Content-Type",
-                                    "value": "application/json"
-                                }
-                            ],
-                            "cookie": [],
-                            "body": "{\n    \"status\": \"fail\",\n    \"data\": \"Invalid login credentials\"\n}"
-                        }
-                    ]
-                },
-                {
-                    "name": "User Sign Out",
-                    "request": {
-                        "method": "GET",
-                        "header": [],
-                        "url": {
-                            "raw": "{{base_url}}/api/v1/logout",
-                            "host": ["{{base_url}}"],
-                            "path": ["api", "v1", "logout"]
-                        },
-                        "description": "Sign out user and clear session cookies\n\n**Features:**\n- Clears authentication cookies\n- Invalidates session on server\n- Returns success message"
-                    },
-                    "response": [
-                        {
-                            "name": "Success Response",
-                            "originalRequest": {
-                                "method": "GET",
-                                "header": [],
-                                "url": {
-                                    "raw": "{{base_url}}/api/v1/logout",
-                                    "host": ["{{base_url}}"],
-                                    "path": ["api", "v1", "logout"]
-                                }
-                            },
-                            "status": "OK",
-                            "code": 200,
-                            "_postman_previewlanguage": "json",
-                            "header": [
-                                {
-                                    "key": "Content-Type",
-                                    "value": "application/json"
-                                },
-                                {
-                                    "key": "Set-Cookie",
-                                    "value": "access_token=; Max-Age=0; HttpOnly; Secure; SameSite=Lax"
-                                }
-                            ],
-                            "cookie": [],
-                            "body": "{\n    \"status\": \"success\",\n    \"message\": \"Sign out successfully\"\n}"
-                        }
-                    ]
-                },
-                {
-                    "name": "Email Confirmation",
-                    "request": {
-                        "method": "GET",
-                        "header": [],
-                        "url": {
-                            "raw": "{{base_url}}/api/v1/confirm{{confirmation_token}}",
-                            "host": ["{{base_url}}"],
-                            "path": [
-                                "api",
-                                "v1",
-                                "confirm",
-                                "{{confirmation_token}}"
-                            ]
-                        },
-                        "description": "Confirm user email with token\n\n**Token Format:**\n- access_token=JWT_TOKEN&type=signup\n- Example: #access_token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...&type=signup\n\n**Features:**\n- Sets authentication cookies\n- Validates confirmation token\n- Activates user account"
-                    },
-                    "response": [
-                        {
-                            "name": "Success Response",
-                            "originalRequest": {
-                                "method": "GET",
-                                "header": [],
-                                "url": {
-                                    "raw": "{{base_url}}/api/v1/confirm#access_token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...&type=signup",
-                                    "host": ["{{base_url}}"],
-                                    "path": ["api", "v1", "confirm"],
-                                    "hash": "access_token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...&type=signup"
-                                }
-                            },
-                            "status": "OK",
-                            "code": 200,
-                            "_postman_previewlanguage": "json",
-                            "header": [
-                                {
-                                    "key": "Content-Type",
-                                    "value": "application/json"
-                                },
-                                {
-                                    "key": "Set-Cookie",
-                                    "value": "access_token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...; HttpOnly; Secure; SameSite=Lax"
-                                }
-                            ],
-                            "cookie": [
-                                {
-                                    "name": "access_token",
-                                    "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
-                                    "httpOnly": true,
-                                    "secure": true,
-                                    "sameSite": "lax"
-                                }
-                            ],
-                            "body": "{\n    \"status\": \"ok\",\n    \"data\": {\n        \"access_token\": \"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...\",\n        \"type\": \"signup\"\n    }\n}"
-                        },
-                        {
-                            "name": "Invalid Token Error",
-                            "originalRequest": {
-                                "method": "GET",
-                                "header": [],
-                                "url": {
-                                    "raw": "{{base_url}}/api/v1/confirminvalid-token",
-                                    "host": ["{{base_url}}"],
-                                    "path": [
-                                        "api",
-                                        "v1",
-                                        "confirminvalid-token"
-                                    ]
-                                }
-                            },
-                            "status": "Bad Request",
-                            "code": 400,
-                            "_postman_previewlanguage": "json",
-                            "header": [
-                                {
-                                    "key": "Content-Type",
-                                    "value": "application/json"
-                                }
-                            ],
-                            "cookie": [],
-                            "body": "{\n    \"status\": \"fail\",\n    \"data\": \"Invalid confirmation token\"\n}"
-                        }
-                    ]
-                },
-                {
-                    "name": "Reset Password",
-                    "request": {
-                        "method": "POST",
-                        "header": [
-                            {
-                                "key": "Content-Type",
-                                "value": "application/json"
-                            }
-                        ],
-                        "body": {
-                            "mode": "raw",
-                            "raw": "{\n    \"email\": \"user@example.com\"\n}",
-                            "options": {
-                                "raw": {
-                                    "language": "json"
-                                }
-                            }
-                        },
-                        "url": {
-                            "raw": "{{base_url}}/api/v1/reset-password",
-                            "host": ["{{base_url}}"],
-                            "path": ["api", "v1", "reset-password"]
-                        },
-                        "description": "Send password reset email\n\n**Features:**\n- Validates email format\n- Sends reset email via Supabase\n- Returns success message\n\n**Note:** User will receive email with reset link"
-                    },
-                    "response": [
-                        {
-                            "name": "Success Response",
-                            "originalRequest": {
-                                "method": "POST",
-                                "header": [
-                                    {
-                                        "key": "Content-Type",
-                                        "value": "application/json"
-                                    }
-                                ],
-                                "body": {
-                                    "mode": "raw",
-                                    "raw": "{\n    \"email\": \"user@example.com\"\n}",
-                                    "options": {
-                                        "raw": {
-                                            "language": "json"
-                                        }
-                                    }
-                                },
-                                "url": {
-                                    "raw": "{{base_url}}/api/v1/reset-password",
-                                    "host": ["{{base_url}}"],
-                                    "path": ["api", "v1", "reset-password"]
-                                }
-                            },
-                            "status": "OK",
-                            "code": 200,
-                            "_postman_previewlanguage": "json",
-                            "header": [
-                                {
-                                    "key": "Content-Type",
-                                    "value": "application/json"
-                                }
-                            ],
-                            "cookie": [],
-                            "body": "{\n    \"status\": \"success\",\n    \"data\": {\n        \"message\": \"Password reset email sent\"\n    }\n}"
-                        }
-                    ]
-                },
-                {
-                    "name": "Change Password",
-                    "request": {
-                        "method": "POST",
-                        "header": [
-                            {
-                                "key": "Content-Type",
-                                "value": "application/json"
-                            }
-                        ],
-                        "body": {
-                            "mode": "raw",
-                            "raw": "{\n    \"new_password\": \"newsecurepassword123\",\n    \"confirm_password\": \"newsecurepassword123\"\n}",
-                            "options": {
-                                "raw": {
-                                    "language": "json"
-                                }
-                            }
-                        },
-                        "url": {
-                            "raw": "{{base_url}}/api/v1/change-password",
-                            "host": ["{{base_url}}"],
-                            "path": ["api", "v1", "change-password"]
-                        },
-                        "description": "Change user password\n\n**Requirements:**\n- User must be authenticated\n- New password must be at least 8 characters\n- Passwords must match\n\n**Features:**\n- Clears existing session cookies\n- Updates password in database\n- Requires re-authentication"
-                    },
-                    "response": [
-                        {
-                            "name": "Success Response",
-                            "originalRequest": {
-                                "method": "POST",
-                                "header": [
-                                    {
-                                        "key": "Content-Type",
-                                        "value": "application/json"
-                                    }
-                                ],
-                                "body": {
-                                    "mode": "raw",
-                                    "raw": "{\n    \"new_password\": \"newsecurepassword123\",\n    \"confirm_password\": \"newsecurepassword123\"\n}",
-                                    "options": {
-                                        "raw": {
-                                            "language": "json"
-                                        }
-                                    }
-                                },
-                                "url": {
-                                    "raw": "{{base_url}}/api/v1/change-password",
-                                    "host": ["{{base_url}}"],
-                                    "path": ["api", "v1", "change-password"]
-                                }
-                            },
-                            "status": "OK",
-                            "code": 200,
-                            "_postman_previewlanguage": "json",
-                            "header": [
-                                {
-                                    "key": "Content-Type",
-                                    "value": "application/json"
-                                },
-                                {
-                                    "key": "Set-Cookie",
-                                    "value": "access_token=; Max-Age=0; HttpOnly; Secure; SameSite=Lax"
-                                }
-                            ],
-                            "cookie": [],
-                            "body": "{\n    \"status\": \"success\",\n    \"data\": {\n        \"user\": {\n            \"id\": \"uuid-here\",\n            \"email\": \"user@example.com\",\n            \"updated_at\": \"2024-01-01T00:00:00Z\"\n        }\n    }\n}"
-                        },
-                        {
-                            "name": "Password Mismatch Error",
-                            "originalRequest": {
-                                "method": "POST",
-                                "header": [
-                                    {
-                                        "key": "Content-Type",
-                                        "value": "application/json"
-                                    }
-                                ],
-                                "body": {
-                                    "mode": "raw",
-                                    "raw": "{\n    \"new_password\": \"newpassword123\",\n    \"confirm_password\": \"differentpassword123\"\n}",
-                                    "options": {
-                                        "raw": {
-                                            "language": "json"
-                                        }
-                                    }
-                                },
-                                "url": {
-                                    "raw": "{{base_url}}/api/v1/change-password",
-                                    "host": ["{{base_url}}"],
-                                    "path": ["api", "v1", "change-password"]
-                                }
-                            },
-                            "status": "Bad Request",
-                            "code": 400,
-                            "_postman_previewlanguage": "json",
-                            "header": [
-                                {
-                                    "key": "Content-Type",
-                                    "value": "application/json"
-                                }
-                            ],
-                            "cookie": [],
-                            "body": "{\n    \"status\": \"fail\",\n    \"data\": \"Passwords do not match\"\n}"
-                        }
-                    ]
-                }
-            ],
-            "description": "User authentication endpoints including sign up, sign in, sign out, email confirmation, and password management"
-        },
-        {
-            "name": "User Profile",
-            "item": [
-                {
-                    "name": "Get User Profile",
-                    "request": {
-                        "method": "GET",
-                        "header": [],
-                        "url": {
-                            "raw": "{{base_url}}/api/v1/profile",
-                            "host": ["{{base_url}}"],
-                            "path": ["api", "v1", "profile"]
-                        },
-                        "description": "Get current user profile information\n\n**Authentication:** Required\n**Features:**\n- Returns user profile from database\n- Falls back to basic user info if no profile\n- Handles authentication errors"
-                    },
-                    "response": [
-                        {
-                            "name": "Success Response",
-                            "originalRequest": {
-                                "method": "GET",
-                                "header": [],
-                                "url": {
-                                    "raw": "{{base_url}}/api/v1/profile",
-                                    "host": ["{{base_url}}"],
-                                    "path": ["api", "v1", "profile"]
-                                }
-                            },
-                            "status": "OK",
-                            "code": 200,
-                            "_postman_previewlanguage": "json",
-                            "header": [
-                                {
-                                    "key": "Content-Type",
-                                    "value": "application/json"
-                                }
-                            ],
-                            "cookie": [
-                                {
-                                    "name": "access_token",
-                                    "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
-                                    "httpOnly": true,
-                                    "secure": true,
-                                    "sameSite": "lax"
-                                }
-                            ],
-                            "body": "{\n    \"status\": \"ok\",\n    \"data\": {\n        \"id\": \"uuid-here\",\n        \"email\": \"user@example.com\",\n        \"name\": \"John Doe\",\n        \"avatar_url\": \"https://example.com/avatar.jpg\",\n        \"bio\": \"Software developer\",\n        \"created_at\": \"2024-01-01T00:00:00Z\",\n        \"updated_at\": \"2024-01-01T00:00:00Z\"\n    }\n}"
-                        },
-                        {
-                            "name": "Authentication Error",
-                            "originalRequest": {
-                                "method": "GET",
-                                "header": [],
-                                "url": {
-                                    "raw": "{{base_url}}/api/v1/profile",
-                                    "host": ["{{base_url}}"],
-                                    "path": ["api", "v1", "profile"]
-                                }
-                            },
-                            "status": "Unauthorized",
-                            "code": 401,
-                            "_postman_previewlanguage": "json",
-                            "header": [
-                                {
-                                    "key": "Content-Type",
-                                    "value": "application/json"
-                                }
-                            ],
-                            "cookie": [],
-                            "body": "{\n    \"status\": \"fail\",\n    \"data\": \"Authentication required\"\n}"
-                        }
-                    ]
-                },
-                {
-                    "name": "Get Current User Info",
-                    "request": {
-                        "method": "GET",
-                        "header": [],
-                        "url": {
-                            "raw": "{{base_url}}/api/v1/me",
-                            "host": ["{{base_url}}"],
-                            "path": ["api", "v1", "me"]
-                        },
-                        "description": "Get current user information (optional authentication)\n\n**Features:**\n- Works with or without authentication\n- Returns user data if authenticated\n- Returns error if not authenticated\n\n**Use Case:** Check if user is logged in"
-                    },
-                    "response": [
-                        {
-                            "name": "Authenticated User",
-                            "originalRequest": {
-                                "method": "GET",
-                                "header": [],
-                                "url": {
-                                    "raw": "{{base_url}}/api/v1/me",
-                                    "host": ["{{base_url}}"],
-                                    "path": ["api", "v1", "me"]
-                                }
-                            },
-                            "status": "OK",
-                            "code": 200,
-                            "_postman_previewlanguage": "json",
-                            "header": [
-                                {
-                                    "key": "Content-Type",
-                                    "value": "application/json"
-                                }
-                            ],
-                            "cookie": [
-                                {
-                                    "name": "access_token",
-                                    "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
-                                    "httpOnly": true,
-                                    "secure": true,
-                                    "sameSite": "lax"
-                                }
-                            ],
-                            "body": "{\n    \"status\": \"ok\",\n    \"data\": {\n        \"id\": \"uuid-here\",\n        \"email\": \"user@example.com\",\n        \"created_at\": \"2024-01-01T00:00:00Z\"\n    }\n}"
-                        },
-                        {
-                            "name": "Not Authenticated",
-                            "originalRequest": {
-                                "method": "GET",
-                                "header": [],
-                                "url": {
-                                    "raw": "{{base_url}}/api/v1/me",
-                                    "host": ["{{base_url}}"],
-                                    "path": ["api", "v1", "me"]
-                                }
-                            },
-                            "status": "OK",
-                            "code": 200,
-                            "_postman_previewlanguage": "json",
-                            "header": [
-                                {
-                                    "key": "Content-Type",
-                                    "value": "application/json"
-                                }
-                            ],
-                            "cookie": [],
-                            "body": "{\n    \"status\": \"fail\",\n    \"data\": \"Not authenticated\"\n}"
-                        }
-                    ]
-                }
-            ],
-            "description": "User profile management endpoints"
+          "name": "Root",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/",
+              "host": ["{{base_url}}"],
+              "path": [""]
+            },
+            "description": "Landing page (HTML)."
+          }
         }
-    ],
-    "event": [
+      ]
+    },
+    {
+      "name": "Auth",
+      "description": "Registration, login, token rotation, email verification, password reset, OAuth.",
+      "item": [
         {
-            "listen": "prerequest",
-            "script": {
-                "type": "text/javascript",
-                		"exec": [
-			"// Set default headers for all requests",
-			"pm.request.headers.add({\n    key: 'User-Agent',\n    value: 'Niya-API-Client/1.0'\n});",
-                    "",
-                    "// Log request details",
-                    "console.log('Request:', pm.request.method, pm.request.url);"
-                ]
-            }
-        },
-        {
-            "listen": "test",
-            "script": {
-                "type": "text/javascript",
+          "name": "Register",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
                 "exec": [
-                    "// Common test script for all requests",
-                    "pm.test('Status code is valid', function () {",
-                    "    pm.expect(pm.response.code).to.be.oneOf([200, 201, 400, 401, 403, 404, 422, 429, 500]);",
-                    "});",
-                    "",
-                    "pm.test('Response has valid JSON', function () {",
-                    "    pm.response.to.have.jsonBody();",
-                    "});",
-                    "",
-                    "pm.test('Response time is acceptable', function () {",
-                    "    pm.expect(pm.response.responseTime).to.be.below(5000);",
-                    "});",
-                    "",
-                    "// Check for rate limiting",
-                    "if (pm.response.code === 429) {",
-                    "    pm.test('Rate limit exceeded', function () {",
-                    "        pm.expect(pm.response.json()).to.have.property('detail');",
-                    "    });",
-                    "}",
-                    "",
-                    "// Log response details",
-                    "console.log('Response:', pm.response.code, pm.response.status);"
-                ]
+                  "if (pm.response.code === 201) {",
+                  "  const j = pm.response.json();",
+                  "  if (j.user && j.user.email) {",
+                  "    pm.collectionVariables.set('registered_email', j.user.email);",
+                  "    console.log('Registered:', j.user.email, '— now verify email with OTP');",
+                  "  }",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
             }
-        }
-    ],
-    "variable": [
-        {
-            "key": "base_url",
-            "value": "http://localhost:8000",
-            "type": "string"
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"user@example.com\",\n  \"password\": \"SecurePass123!\",\n  \"name\": \"Test User\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/auth/register",
+              "host": ["{{base_url}}"],
+              "path": ["api", "auth", "register"]
+            },
+            "description": "Creates account and sends OTP to email. Responds 201 on success, 409 if email already exists."
+          }
         },
         {
-            "key": "confirmation_token",
-            "value": "#access_token=your-jwt-token-here&type=signup",
-            "type": "string"
+          "name": "Verify Email (OTP)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"user@example.com\",\n  \"otp\": \"123456\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/auth/verify-email",
+              "host": ["{{base_url}}"],
+              "path": ["api", "auth", "verify-email"]
+            },
+            "description": "Activates account using the 6-digit OTP sent to the email."
+          }
+        },
+        {
+          "name": "Resend OTP",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"user@example.com\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/auth/resend-otp",
+              "host": ["{{base_url}}"],
+              "path": ["api", "auth", "resend-otp"]
+            }
+          }
+        },
+        {
+          "name": "Login",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "  const j = pm.response.json();",
+                  "  if (j.access_token) {",
+                  "    pm.collectionVariables.set('access_token', j.access_token);",
+                  "    console.log('access_token saved');",
+                  "  }",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"user@example.com\",\n  \"password\": \"SecurePass123!\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/auth/login",
+              "host": ["{{base_url}}"],
+              "path": ["api", "auth", "login"]
+            },
+            "description": "Returns access + refresh tokens in HTTP-only cookies. Also returns `access_token` in body — saved automatically to `{{access_token}}`."
+          }
+        },
+        {
+          "name": "Refresh Token",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "  const j = pm.response.json();",
+                  "  if (j.access_token) {",
+                  "    pm.collectionVariables.set('access_token', j.access_token);",
+                  "    console.log('access_token refreshed');",
+                  "  }",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/auth/refresh",
+              "host": ["{{base_url}}"],
+              "path": ["api", "auth", "refresh"]
+            },
+            "description": "Uses the `refresh_token` cookie to issue a new access token. Rotates refresh token."
+          }
+        },
+        {
+          "name": "Forgot Password",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"user@example.com\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/auth/forgot-password",
+              "host": ["{{base_url}}"],
+              "path": ["api", "auth", "forgot-password"]
+            }
+          }
+        },
+        {
+          "name": "Reset Password",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"token\": \"<reset-token-from-email>\",\n  \"new_password\": \"NewSecurePass123!\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/auth/reset-password",
+              "host": ["{{base_url}}"],
+              "path": ["api", "auth", "reset-password"]
+            }
+          }
+        },
+        {
+          "name": "OAuth Login",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"provider_user_id\": \"google-uid-abc123\",\n  \"email\": \"user@gmail.com\",\n  \"name\": \"Google User\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/auth/oauth/google",
+              "host": ["{{base_url}}"],
+              "path": ["api", "auth", "oauth", "google"]
+            },
+            "description": "Replace `google` with your provider name. Creates or logs in a user."
+          }
+        },
+        {
+          "name": "Logout",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Authorization", "value": "Bearer {{access_token}}" }],
+            "url": {
+              "raw": "{{base_url}}/api/auth/logout",
+              "host": ["{{base_url}}"],
+              "path": ["api", "auth", "logout"]
+            },
+            "description": "Clears cookies and revokes the current refresh token."
+          }
+        },
+        {
+          "name": "Logout All Sessions",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Authorization", "value": "Bearer {{access_token}}" }],
+            "url": {
+              "raw": "{{base_url}}/api/auth/logout-all",
+              "host": ["{{base_url}}"],
+              "path": ["api", "auth", "logout-all"]
+            },
+            "description": "Revokes all refresh tokens for the user (all devices)."
+          }
         }
-    ]
+      ]
+    },
+    {
+      "name": "Users",
+      "description": "Profile management, secondary emails, password change.",
+      "item": [
+        {
+          "name": "Get Me",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{access_token}}" }],
+            "url": {
+              "raw": "{{base_url}}/api/users/me",
+              "host": ["{{base_url}}"],
+              "path": ["api", "users", "me"]
+            },
+            "description": "Returns the current user with profile and linked emails."
+          }
+        },
+        {
+          "name": "Update Me",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{access_token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Updated Name\",\n  \"bio\": \"Software engineer\",\n  \"avatar_url\": \"https://example.com/avatar.png\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/users/me",
+              "host": ["{{base_url}}"],
+              "path": ["api", "users", "me"]
+            }
+          }
+        },
+        {
+          "name": "Get Profile",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{access_token}}" }],
+            "url": {
+              "raw": "{{base_url}}/api/users/me/profile",
+              "host": ["{{base_url}}"],
+              "path": ["api", "users", "me", "profile"]
+            }
+          }
+        },
+        {
+          "name": "Update Profile",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{access_token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"bio\": \"Building cool things\",\n  \"website\": \"https://mysite.com\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/users/me/profile",
+              "host": ["{{base_url}}"],
+              "path": ["api", "users", "me", "profile"]
+            }
+          }
+        },
+        {
+          "name": "List Emails",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{access_token}}" }],
+            "url": {
+              "raw": "{{base_url}}/api/users/me/emails",
+              "host": ["{{base_url}}"],
+              "path": ["api", "users", "me", "emails"]
+            }
+          }
+        },
+        {
+          "name": "Add Email",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{access_token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"secondary@example.com\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/users/me/emails",
+              "host": ["{{base_url}}"],
+              "path": ["api", "users", "me", "emails"]
+            }
+          }
+        },
+        {
+          "name": "Change Password",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{access_token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"current_password\": \"SecurePass123!\",\n  \"new_password\": \"NewSecurePass456!\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/users/me/password",
+              "host": ["{{base_url}}"],
+              "path": ["api", "users", "me", "password"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Organizations",
+      "description": "Create orgs, manage members, send invites.",
+      "item": [
+        {
+          "name": "Create Org",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "  const j = pm.response.json();",
+                  "  if (j.id) {",
+                  "    pm.collectionVariables.set('org_id', j.id);",
+                  "    console.log('org_id saved:', j.id);",
+                  "  }",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{access_token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Acme Corp\",\n  \"description\": \"Our awesome organisation\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/orgs",
+              "host": ["{{base_url}}"],
+              "path": ["api", "orgs"]
+            }
+          }
+        },
+        {
+          "name": "List My Orgs",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{access_token}}" }],
+            "url": {
+              "raw": "{{base_url}}/api/orgs",
+              "host": ["{{base_url}}"],
+              "path": ["api", "orgs"]
+            }
+          }
+        },
+        {
+          "name": "Get Org",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{access_token}}" }],
+            "url": {
+              "raw": "{{base_url}}/api/orgs/{{org_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "orgs", "{{org_id}}"]
+            }
+          }
+        },
+        {
+          "name": "Update Org",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{access_token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Acme Corp Updated\",\n  \"description\": \"Updated description\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/orgs/{{org_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "orgs", "{{org_id}}"]
+            }
+          }
+        },
+        {
+          "name": "List Members",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{access_token}}" }],
+            "url": {
+              "raw": "{{base_url}}/api/orgs/{{org_id}}/members",
+              "host": ["{{base_url}}"],
+              "path": ["api", "orgs", "{{org_id}}", "members"]
+            }
+          }
+        },
+        {
+          "name": "Invite Member",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{access_token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"colleague@example.com\",\n  \"role\": \"member\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/orgs/{{org_id}}/invites",
+              "host": ["{{base_url}}"],
+              "path": ["api", "orgs", "{{org_id}}", "invites"]
+            },
+            "description": "Roles: owner, admin, member."
+          }
+        },
+        {
+          "name": "Accept Invite",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{access_token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"token\": \"<invite-token-from-email>\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/orgs/invites/accept",
+              "host": ["{{base_url}}"],
+              "path": ["api", "orgs", "invites", "accept"]
+            }
+          }
+        },
+        {
+          "name": "Change Member Role",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{access_token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"role\": \"admin\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/orgs/{{org_id}}/members/:user_id/role",
+              "host": ["{{base_url}}"],
+              "path": ["api", "orgs", "{{org_id}}", "members", ":user_id", "role"],
+              "variable": [{ "key": "user_id", "value": "<target-user-uuid>" }]
+            }
+          }
+        },
+        {
+          "name": "Remove Member",
+          "request": {
+            "method": "DELETE",
+            "header": [{ "key": "Authorization", "value": "Bearer {{access_token}}" }],
+            "url": {
+              "raw": "{{base_url}}/api/orgs/{{org_id}}/members/:user_id",
+              "host": ["{{base_url}}"],
+              "path": ["api", "orgs", "{{org_id}}", "members", ":user_id"],
+              "variable": [{ "key": "user_id", "value": "<target-user-uuid>" }]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Billing",
+      "description": "Plans, subscriptions, invoices, payment methods, transactions, webhooks.",
+      "item": [
+        {
+          "name": "List Plans (alpha)",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{access_token}}" }],
+            "url": {
+              "raw": "{{base_url}}/api/billing/plans/alpha",
+              "host": ["{{base_url}}"],
+              "path": ["api", "billing", "plans", "alpha"]
+            },
+            "description": "Replace `alpha` with any product identifier."
+          }
+        },
+        {
+          "name": "List Plans (taskboard)",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{access_token}}" }],
+            "url": {
+              "raw": "{{base_url}}/api/billing/plans/taskboard",
+              "host": ["{{base_url}}"],
+              "path": ["api", "billing", "plans", "taskboard"]
+            }
+          }
+        },
+        {
+          "name": "Get Subscription",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{access_token}}" }],
+            "url": {
+              "raw": "{{base_url}}/api/billing/subscription/alpha",
+              "host": ["{{base_url}}"],
+              "path": ["api", "billing", "subscription", "alpha"]
+            }
+          }
+        },
+        {
+          "name": "Subscribe",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{access_token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"plan_id\": \"<plan-uuid>\",\n  \"product\": \"alpha\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/billing/subscribe",
+              "host": ["{{base_url}}"],
+              "path": ["api", "billing", "subscribe"]
+            }
+          }
+        },
+        {
+          "name": "Change Plan",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{access_token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"new_plan_id\": \"<plan-uuid>\",\n  \"product\": \"alpha\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/billing/change-plan",
+              "host": ["{{base_url}}"],
+              "path": ["api", "billing", "change-plan"]
+            }
+          }
+        },
+        {
+          "name": "Cancel Subscription",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{access_token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"product\": \"alpha\",\n  \"reason\": \"No longer needed\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/billing/cancel",
+              "host": ["{{base_url}}"],
+              "path": ["api", "billing", "cancel"]
+            }
+          }
+        },
+        {
+          "name": "List Invoices",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "  const j = pm.response.json();",
+                  "  if (j.length > 0) pm.collectionVariables.set('invoice_id', j[0].id);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{access_token}}" }],
+            "url": {
+              "raw": "{{base_url}}/api/billing/invoices",
+              "host": ["{{base_url}}"],
+              "path": ["api", "billing", "invoices"]
+            }
+          }
+        },
+        {
+          "name": "Get Invoice",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{access_token}}" }],
+            "url": {
+              "raw": "{{base_url}}/api/billing/invoices/{{invoice_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "billing", "invoices", "{{invoice_id}}"]
+            }
+          }
+        },
+        {
+          "name": "List Payment Methods",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{access_token}}" }],
+            "url": {
+              "raw": "{{base_url}}/api/billing/payment-methods",
+              "host": ["{{base_url}}"],
+              "path": ["api", "billing", "payment-methods"]
+            }
+          }
+        },
+        {
+          "name": "Add Payment Method",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{access_token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"type\": \"card\",\n  \"brand\": \"visa\",\n  \"last_four\": \"4242\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/billing/payment-methods",
+              "host": ["{{base_url}}"],
+              "path": ["api", "billing", "payment-methods"]
+            }
+          }
+        },
+        {
+          "name": "Remove Payment Method",
+          "request": {
+            "method": "DELETE",
+            "header": [{ "key": "Authorization", "value": "Bearer {{access_token}}" }],
+            "url": {
+              "raw": "{{base_url}}/api/billing/payment-methods/:method_id",
+              "host": ["{{base_url}}"],
+              "path": ["api", "billing", "payment-methods", ":method_id"],
+              "variable": [{ "key": "method_id", "value": "<payment-method-uuid>" }]
+            }
+          }
+        },
+        {
+          "name": "List Transactions",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{access_token}}" }],
+            "url": {
+              "raw": "{{base_url}}/api/billing/transactions",
+              "host": ["{{base_url}}"],
+              "path": ["api", "billing", "transactions"]
+            }
+          }
+        },
+        {
+          "name": "Webhook — Razorpay",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "x-razorpay-signature", "value": "<webhook-signature>" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"event\": \"payment.captured\",\n  \"payload\": {\n    \"payment\": {\n      \"entity\": {\n        \"id\": \"pay_xxx\",\n        \"amount\": 50000,\n        \"currency\": \"INR\",\n        \"status\": \"captured\"\n      }\n    }\n  }\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/billing/webhook/razorpay",
+              "host": ["{{base_url}}"],
+              "path": ["api", "billing", "webhook", "razorpay"]
+            },
+            "description": "Signature is verified server-side. Replace `razorpay` with `stripe` for Stripe webhooks."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Notifications",
+      "description": "In-app notifications for the current user.",
+      "item": [
+        {
+          "name": "List All Notifications",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "  const j = pm.response.json();",
+                  "  if (j.length > 0) pm.collectionVariables.set('notification_id', j[0].id);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{access_token}}" }],
+            "url": {
+              "raw": "{{base_url}}/api/notifications?unread_only=false",
+              "host": ["{{base_url}}"],
+              "path": ["api", "notifications"],
+              "query": [{ "key": "unread_only", "value": "false" }]
+            }
+          }
+        },
+        {
+          "name": "List Unread Only",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{access_token}}" }],
+            "url": {
+              "raw": "{{base_url}}/api/notifications?unread_only=true",
+              "host": ["{{base_url}}"],
+              "path": ["api", "notifications"],
+              "query": [{ "key": "unread_only", "value": "true" }]
+            }
+          }
+        },
+        {
+          "name": "Mark One Read",
+          "request": {
+            "method": "PATCH",
+            "header": [{ "key": "Authorization", "value": "Bearer {{access_token}}" }],
+            "url": {
+              "raw": "{{base_url}}/api/notifications/{{notification_id}}/read",
+              "host": ["{{base_url}}"],
+              "path": ["api", "notifications", "{{notification_id}}", "read"]
+            }
+          }
+        },
+        {
+          "name": "Mark All Read",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Authorization", "value": "Bearer {{access_token}}" }],
+            "url": {
+              "raw": "{{base_url}}/api/notifications/read-all",
+              "host": ["{{base_url}}"],
+              "path": ["api", "notifications", "read-all"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Admin",
+      "description": "Cross-product dashboard. Org-scoped view requires org owner/admin role.",
+      "item": [
+        {
+          "name": "Dashboard — Platform-wide",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{access_token}}" }],
+            "url": {
+              "raw": "{{base_url}}/api/admin/dashboard",
+              "host": ["{{base_url}}"],
+              "path": ["api", "admin", "dashboard"]
+            },
+            "description": "Aggregate totals across all schemas. No per-member breakdown."
+          }
+        },
+        {
+          "name": "Dashboard — Org-scoped",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{access_token}}" }],
+            "url": {
+              "raw": "{{base_url}}/api/admin/dashboard?org_id={{org_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "admin", "dashboard"],
+              "query": [{ "key": "org_id", "value": "{{org_id}}" }]
+            },
+            "description": "Per-member activity breakdown. Caller must be org owner or admin."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Product Alpha",
+      "description": "Template product — rename/replace with your actual product.",
+      "item": [
+        {
+          "name": "List Resources",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{access_token}}" }],
+            "url": {
+              "raw": "{{base_url}}/api/alpha/resources",
+              "host": ["{{base_url}}"],
+              "path": ["api", "alpha", "resources"]
+            }
+          }
+        },
+        {
+          "name": "Create Resource",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "  const j = pm.response.json();",
+                  "  if (j.id) {",
+                  "    pm.collectionVariables.set('resource_id', j.id);",
+                  "    console.log('resource_id saved:', j.id);",
+                  "  }",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{access_token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"My First Resource\",\n  \"data\": {\n    \"key\": \"value\",\n    \"tags\": [\"example\", \"test\"]\n  }\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/alpha/resources",
+              "host": ["{{base_url}}"],
+              "path": ["api", "alpha", "resources"]
+            }
+          }
+        },
+        {
+          "name": "Get Resource",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{access_token}}" }],
+            "url": {
+              "raw": "{{base_url}}/api/alpha/resources/{{resource_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "alpha", "resources", "{{resource_id}}"]
+            }
+          }
+        },
+        {
+          "name": "Update Resource",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{access_token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Updated Resource Title\",\n  \"is_active\": true\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/alpha/resources/{{resource_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "alpha", "resources", "{{resource_id}}"]
+            }
+          }
+        },
+        {
+          "name": "Delete Resource",
+          "request": {
+            "method": "DELETE",
+            "header": [{ "key": "Authorization", "value": "Bearer {{access_token}}" }],
+            "url": {
+              "raw": "{{base_url}}/api/alpha/resources/{{resource_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "alpha", "resources", "{{resource_id}}"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Taskboard — Projects",
+      "description": "Project management within the taskboard product.",
+      "item": [
+        {
+          "name": "List Projects",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{access_token}}" }],
+            "url": {
+              "raw": "{{base_url}}/api/taskboard/projects?include_archived=false",
+              "host": ["{{base_url}}"],
+              "path": ["api", "taskboard", "projects"],
+              "query": [{ "key": "include_archived", "value": "false" }]
+            }
+          }
+        },
+        {
+          "name": "Create Project",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "  const j = pm.response.json();",
+                  "  if (j.id) {",
+                  "    pm.collectionVariables.set('project_id', j.id);",
+                  "    console.log('project_id saved:', j.id);",
+                  "  }",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{access_token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Website Redesign\",\n  \"description\": \"Redesign the company website for Q2\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/taskboard/projects",
+              "host": ["{{base_url}}"],
+              "path": ["api", "taskboard", "projects"]
+            }
+          }
+        },
+        {
+          "name": "Get Project",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{access_token}}" }],
+            "url": {
+              "raw": "{{base_url}}/api/taskboard/projects/{{project_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "taskboard", "projects", "{{project_id}}"]
+            }
+          }
+        },
+        {
+          "name": "Update Project",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{access_token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Website Redesign v2\",\n  \"description\": \"Updated scope with new requirements\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/taskboard/projects/{{project_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "taskboard", "projects", "{{project_id}}"]
+            }
+          }
+        },
+        {
+          "name": "Archive Project",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Authorization", "value": "Bearer {{access_token}}" }],
+            "url": {
+              "raw": "{{base_url}}/api/taskboard/projects/{{project_id}}/archive",
+              "host": ["{{base_url}}"],
+              "path": ["api", "taskboard", "projects", "{{project_id}}", "archive"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Taskboard — Tasks",
+      "description": "Tasks nested under projects. Status values: todo, in_progress, done, canceled.",
+      "item": [
+        {
+          "name": "List Tasks",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{access_token}}" }],
+            "url": {
+              "raw": "{{base_url}}/api/taskboard/projects/{{project_id}}/tasks",
+              "host": ["{{base_url}}"],
+              "path": ["api", "taskboard", "projects", "{{project_id}}", "tasks"]
+            }
+          }
+        },
+        {
+          "name": "List Tasks by Status",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{access_token}}" }],
+            "url": {
+              "raw": "{{base_url}}/api/taskboard/projects/{{project_id}}/tasks?status=todo",
+              "host": ["{{base_url}}"],
+              "path": ["api", "taskboard", "projects", "{{project_id}}", "tasks"],
+              "query": [{ "key": "status", "value": "todo", "description": "todo | in_progress | done | canceled" }]
+            }
+          }
+        },
+        {
+          "name": "Create Task",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "  const j = pm.response.json();",
+                  "  if (j.id) {",
+                  "    pm.collectionVariables.set('task_id', j.id);",
+                  "    console.log('task_id saved:', j.id);",
+                  "  }",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{access_token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Design new homepage\",\n  \"description\": \"Create Figma mockups for the redesigned homepage\",\n  \"status\": \"todo\",\n  \"due_at\": \"2026-04-01T00:00:00Z\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/taskboard/projects/{{project_id}}/tasks",
+              "host": ["{{base_url}}"],
+              "path": ["api", "taskboard", "projects", "{{project_id}}", "tasks"]
+            }
+          }
+        },
+        {
+          "name": "Get Task",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{access_token}}" }],
+            "url": {
+              "raw": "{{base_url}}/api/taskboard/projects/{{project_id}}/tasks/{{task_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "taskboard", "projects", "{{project_id}}", "tasks", "{{task_id}}"]
+            }
+          }
+        },
+        {
+          "name": "Update Task",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{access_token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"in_progress\",\n  \"title\": \"Design new homepage — in progress\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/taskboard/projects/{{project_id}}/tasks/{{task_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "taskboard", "projects", "{{project_id}}", "tasks", "{{task_id}}"]
+            }
+          }
+        },
+        {
+          "name": "Delete Task",
+          "request": {
+            "method": "DELETE",
+            "header": [{ "key": "Authorization", "value": "Bearer {{access_token}}" }],
+            "url": {
+              "raw": "{{base_url}}/api/taskboard/projects/{{project_id}}/tasks/{{task_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "taskboard", "projects", "{{project_id}}", "tasks", "{{task_id}}"]
+            }
+          }
+        }
+      ]
+    }
+  ]
 }

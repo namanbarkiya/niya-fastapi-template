@@ -30,7 +30,7 @@ if __name__ == "__main__":
         print(f"🔄 Auto-reload enabled")
         print("Press Ctrl+C to stop the server")
         
-        uvicorn.run("main:app", host="0.0.0.0", port=port, reload=True)
+        uvicorn.run("app.main:app", host="0.0.0.0", port=port, reload=True)
         
     except KeyboardInterrupt:
         print("\n👋 Server stopped by user")
