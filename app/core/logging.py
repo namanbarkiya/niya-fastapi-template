@@ -17,9 +17,11 @@ def setup_logging() -> None:
     root_logger = logging.getLogger()
     root_logger.setLevel(getattr(logging, settings.log_level))
 
-    console_handler = logging.StreamHandler(sys.stdout)
-    console_handler.setFormatter(formatter)
-    root_logger.addHandler(console_handler)
+    # Guard against duplicate handlers if setup_logging() is called more than once.
+    if not root_logger.handlers:
+        console_handler = logging.StreamHandler(sys.stdout)
+        console_handler.setFormatter(formatter)
+        root_logger.addHandler(console_handler)
 
     if settings.environment == "production":
         file_handler = logging.FileHandler("app.log")
@@ -28,6 +30,13 @@ def setup_logging() -> None:
 
     logging.getLogger("uvicorn.access").setLevel(logging.WARNING)
     logging.getLogger("httpx").setLevel(logging.WARNING)
+
+    # Suppress SQLAlchemy's per-statement engine logs — they're too noisy and
+    # duplicate because the root logger also picks them up via propagation.
+    # Set to WARNING so only real DB errors surface. Flip to DEBUG locally if
+    # you need to inspect generated SQL.
+    logging.getLogger("sqlalchemy.engine").setLevel(logging.WARNING)
+    logging.getLogger("sqlalchemy.pool").setLevel(logging.WARNING)
 
 
 class APILogger:
