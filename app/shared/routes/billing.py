@@ -10,7 +10,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import settings
 from app.core.database import get_db
-from app.core.dependencies import get_current_user
+from app.core.dependencies import get_current_product, get_current_user
 from app.core.exceptions import AuthenticationError, ValidationError
 from app.shared.models.user import User
 from app.shared.schemas.billing import (
@@ -58,10 +58,10 @@ def _billing_service(
 # ------------------------------------------------------------------
 # Plans
 # ------------------------------------------------------------------
-@router.get("/plans/{product}", response_model=list[PlanResponse])
+@router.get("/plans", response_model=list[PlanResponse])
 async def list_plans(
-    product: str,
     db: AsyncSession = Depends(get_db),
+    product: str = Depends(get_current_product),
 ):
     svc = _billing_service(db, product)
     return await svc.list_plans(product)
@@ -70,11 +70,11 @@ async def list_plans(
 # ------------------------------------------------------------------
 # Subscription
 # ------------------------------------------------------------------
-@router.get("/subscription/{product}", response_model=SubscriptionResponse)
+@router.get("/subscription", response_model=SubscriptionResponse)
 async def get_subscription(
-    product: str,
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
+    product: str = Depends(get_current_product),
 ):
     from app.shared.repos.customer_repo import CustomerRepo
     from app.shared.repos.subscription_repo import SubscriptionRepo
@@ -95,9 +95,10 @@ async def subscribe(
     payload: SubscribeRequest,
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
+    product: str = Depends(get_current_product),
 ):
-    svc = _billing_service(db, payload.product)
-    return await svc.subscribe(current_user.id, payload.plan_id, payload.product)
+    svc = _billing_service(db, product)
+    return await svc.subscribe(current_user.id, payload.plan_id, product)
 
 
 @router.post("/cancel", response_model=SubscriptionResponse)
@@ -105,9 +106,10 @@ async def cancel_subscription(
     payload: CancelSubscriptionRequest,
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
+    product: str = Depends(get_current_product),
 ):
-    svc = _billing_service(db, payload.product)
-    return await svc.cancel(current_user.id, payload.product, payload.reason)
+    svc = _billing_service(db, product)
+    return await svc.cancel(current_user.id, product, payload.reason)
 
 
 @router.post("/change-plan", response_model=SubscriptionResponse)
@@ -115,9 +117,10 @@ async def change_plan(
     payload: ChangePlanRequest,
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
+    product: str = Depends(get_current_product),
 ):
-    svc = _billing_service(db, payload.product)
-    return await svc.change_plan(current_user.id, payload.new_plan_id, payload.product)
+    svc = _billing_service(db, product)
+    return await svc.change_plan(current_user.id, payload.new_plan_id, product)
 
 
 # ------------------------------------------------------------------

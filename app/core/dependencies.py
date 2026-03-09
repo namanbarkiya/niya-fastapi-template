@@ -69,20 +69,16 @@ async def get_current_user(
 def get_product(request: Request) -> str:
     """
     Dependency that returns the product identifier set by ProductIdentificationMiddleware.
-
-    Use this in product routes to read which product is being accessed:
-
-        @router.get("/settings")
-        async def get_settings(product: str = Depends(get_product)):
-            ...
-
-    Raises 422 if called on a route where the middleware didn't identify a product
-    (i.e. this dependency should only be used inside product routers).
+    Alias: use get_current_product for new code.
     """
     product = getattr(request.state, "product", None)
     if not product:
         raise ValidationError("Could not determine product from request path")
     return product
+
+
+# Preferred alias — use this in all routes
+get_current_product = get_product
 
 
 async def get_current_user_optional(

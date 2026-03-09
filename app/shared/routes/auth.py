@@ -8,7 +8,7 @@ from fastapi import APIRouter, Depends, Request, Response
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
-from app.core.dependencies import get_current_user
+from app.core.dependencies import get_current_product, get_current_user
 from app.core.exceptions import AuthenticationError
 from app.shared.models.user import User
 from app.shared.schemas.auth import (
@@ -34,9 +34,10 @@ async def register(
     payload: RegisterRequest,
     request: Request,
     db: AsyncSession = Depends(get_db),
+    product: str = Depends(get_current_product),
 ):
     svc = AuthService(db)
-    result = await svc.register(payload, request)
+    result = await svc.register(payload, request, product=product)
     return {
         "status": "success",
         "message": result["message"],
@@ -50,9 +51,10 @@ async def login(
     request: Request,
     response: Response,
     db: AsyncSession = Depends(get_db),
+    product: str = Depends(get_current_product),
 ):
     svc = AuthService(db)
-    return await svc.login(payload, response, request)
+    return await svc.login(payload, response, request, product=product)
 
 
 @router.post("/refresh", response_model=AuthResponse)

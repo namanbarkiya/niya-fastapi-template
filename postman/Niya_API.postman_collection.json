@@ -8,6 +8,7 @@
   "variable": [
     { "key": "base_url", "value": "http://localhost:8000", "type": "string" },
     { "key": "access_token", "value": "", "type": "string" },
+    { "key": "client_key", "value": "pk_alpha_replaceme", "type": "string", "description": "Run scripts/seed_product_clients.py and paste the generated key here" },
     { "key": "org_id", "value": "", "type": "string" },
     { "key": "resource_id", "value": "", "type": "string" },
     { "key": "project_id", "value": "", "type": "string" },
@@ -72,7 +73,10 @@
           ],
           "request": {
             "method": "POST",
-            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "X-Product-Client-Key", "value": "{{client_key}}", "description": "Run scripts/seed_product_clients.py to generate this key" }
+            ],
             "body": {
               "mode": "raw",
               "raw": "{\n  \"email\": \"user@example.com\",\n  \"password\": \"SecurePass123!\",\n  \"name\": \"Test User\"\n}"
@@ -82,7 +86,7 @@
               "host": ["{{base_url}}"],
               "path": ["api", "auth", "register"]
             },
-            "description": "Creates account and sends OTP to email. Responds 201 on success, 409 if email already exists."
+            "description": "Creates account and sends OTP to email. Product is identified server-side via the X-Product-Client-Key header — never from the request body. Responds 201 on success, 409 if email already exists."
           }
         },
         {
@@ -139,7 +143,10 @@
           ],
           "request": {
             "method": "POST",
-            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "X-Product-Client-Key", "value": "{{client_key}}" }
+            ],
             "body": {
               "mode": "raw",
               "raw": "{\n  \"email\": \"user@example.com\",\n  \"password\": \"SecurePass123!\"\n}"
@@ -149,7 +156,7 @@
               "host": ["{{base_url}}"],
               "path": ["api", "auth", "login"]
             },
-            "description": "Returns access + refresh tokens in HTTP-only cookies. Also returns `access_token` in body — saved automatically to `{{access_token}}`."
+            "description": "Returns access + refresh tokens in HTTP-only cookies. Also returns `access_token` in body — saved automatically to `{{access_token}}`. Returns 403 if the user has not signed up for this product."
           }
         },
         {
@@ -552,39 +559,33 @@
       "description": "Plans, subscriptions, invoices, payment methods, transactions, webhooks.",
       "item": [
         {
-          "name": "List Plans (alpha)",
+          "name": "List Plans",
           "request": {
             "method": "GET",
-            "header": [{ "key": "Authorization", "value": "Bearer {{access_token}}" }],
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{access_token}}" },
+              { "key": "X-Product-Client-Key", "value": "{{client_key}}" }
+            ],
             "url": {
-              "raw": "{{base_url}}/api/billing/plans/alpha",
+              "raw": "{{base_url}}/api/billing/plans",
               "host": ["{{base_url}}"],
-              "path": ["api", "billing", "plans", "alpha"]
+              "path": ["api", "billing", "plans"]
             },
-            "description": "Replace `alpha` with any product identifier."
-          }
-        },
-        {
-          "name": "List Plans (taskboard)",
-          "request": {
-            "method": "GET",
-            "header": [{ "key": "Authorization", "value": "Bearer {{access_token}}" }],
-            "url": {
-              "raw": "{{base_url}}/api/billing/plans/taskboard",
-              "host": ["{{base_url}}"],
-              "path": ["api", "billing", "plans", "taskboard"]
-            }
+            "description": "Product is identified via X-Product-Client-Key header."
           }
         },
         {
           "name": "Get Subscription",
           "request": {
             "method": "GET",
-            "header": [{ "key": "Authorization", "value": "Bearer {{access_token}}" }],
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{access_token}}" },
+              { "key": "X-Product-Client-Key", "value": "{{client_key}}" }
+            ],
             "url": {
-              "raw": "{{base_url}}/api/billing/subscription/alpha",
+              "raw": "{{base_url}}/api/billing/subscription",
               "host": ["{{base_url}}"],
-              "path": ["api", "billing", "subscription", "alpha"]
+              "path": ["api", "billing", "subscription"]
             }
           }
         },
@@ -594,11 +595,12 @@
             "method": "POST",
             "header": [
               { "key": "Authorization", "value": "Bearer {{access_token}}" },
-              { "key": "Content-Type", "value": "application/json" }
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "X-Product-Client-Key", "value": "{{client_key}}" }
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"plan_id\": \"<plan-uuid>\",\n  \"product\": \"alpha\"\n}"
+              "raw": "{\n  \"plan_id\": \"<plan-uuid>\"\n}"
             },
             "url": {
               "raw": "{{base_url}}/api/billing/subscribe",
@@ -613,11 +615,12 @@
             "method": "POST",
             "header": [
               { "key": "Authorization", "value": "Bearer {{access_token}}" },
-              { "key": "Content-Type", "value": "application/json" }
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "X-Product-Client-Key", "value": "{{client_key}}" }
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"new_plan_id\": \"<plan-uuid>\",\n  \"product\": \"alpha\"\n}"
+              "raw": "{\n  \"new_plan_id\": \"<plan-uuid>\"\n}"
             },
             "url": {
               "raw": "{{base_url}}/api/billing/change-plan",
@@ -632,11 +635,12 @@
             "method": "POST",
             "header": [
               { "key": "Authorization", "value": "Bearer {{access_token}}" },
-              { "key": "Content-Type", "value": "application/json" }
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "X-Product-Client-Key", "value": "{{client_key}}" }
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"product\": \"alpha\",\n  \"reason\": \"No longer needed\"\n}"
+              "raw": "{\n  \"reason\": \"No longer needed\"\n}"
             },
             "url": {
               "raw": "{{base_url}}/api/billing/cancel",

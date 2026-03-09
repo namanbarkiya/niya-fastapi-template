@@ -13,6 +13,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.config import settings
 from app.core.exceptions import (
     AuthenticationError,
+    AuthorizationError,
     ConflictError,
     NotFoundError,
     ValidationError,
@@ -27,6 +28,7 @@ from app.core.security import (
 )
 from app.shared.models.user import User, UserProfile
 from app.shared.repos.auth_repo import AuthRepo
+from app.shared.repos.product_access_repo import ProductAccessRepo
 from app.shared.repos.user_repo import UserRepo
 from app.shared.schemas.auth import AuthResponse, LoginRequest, RegisterRequest
 from app.shared.schemas.user import MeResponse, ProfileResponse, ProfileUpdate, UserResponse
@@ -83,12 +85,13 @@ def _profile_response(profile: Optional[UserProfile]) -> Optional[ProfileRespons
     return ProfileResponse.model_validate(profile)
 
 
-def _build_jwt_extra(user: User) -> dict:
+async def _build_jwt_extra(user: User, product_access_repo: ProductAccessRepo) -> dict:
     """Build the extra claims for the JWT: email, products, orgs."""
+    products = await product_access_repo.get_user_product_names(user.id)
     return {
         "email": user.email,
-        "products": [],  # populated when product_access is implemented (Group B)
-        "orgs": [],  # populated when orgs are implemented (Group B)
+        "products": products,
+        "orgs": [],
     }
 
 
@@ -107,12 +110,13 @@ class AuthService:
     def __init__(self, db: AsyncSession) -> None:
         self.user_repo = UserRepo(db)
         self.auth_repo = AuthRepo(db)
+        self.product_access_repo = ProductAccessRepo(db)
 
     # ------------------------------------------------------------------
     # Register
     # ------------------------------------------------------------------
     async def register(
-        self, payload: RegisterRequest, request: Optional[Request] = None
+        self, payload: RegisterRequest, request: Optional[Request] = None, product: Optional[str] = None
     ) -> dict:
         existing = await self.user_repo.get_by_email(payload.email)
         if existing:
@@ -133,6 +137,10 @@ class AuthService:
 
         # Create primary email record
         await self.user_repo.add_email(user.id, user.email, is_primary=True)
+
+        # Grant product access — product comes from middleware, never from user input
+        if product:
+            await self.product_access_repo.grant_access(user.id, product)
 
         # Send verification OTP
         otp = generate_otp()
@@ -160,6 +168,7 @@ class AuthService:
         payload: LoginRequest,
         response: Response,
         request: Optional[Request] = None,
+        product: Optional[str] = None,
     ) -> AuthResponse:
         user = await self.user_repo.get_by_email(payload.email)
         if not user or not user.password_hash:
@@ -169,10 +178,18 @@ class AuthService:
         if not user.is_active:
             raise AuthenticationError("This account has been deactivated")
 
+        # Verify the user has signed up for this product
+        if product:
+            has_access = await self.product_access_repo.has_access(user.id, product)
+            if not has_access:
+                raise AuthorizationError(
+                    "No account found for this product. Please sign up first."
+                )
+
         await self.user_repo.update_last_login(user.id)
 
         access_token = create_access_token(
-            subject=str(user.id), extra=_build_jwt_extra(user)
+            subject=str(user.id), extra=await _build_jwt_extra(user, self.product_access_repo)
         )
         raw_refresh = create_refresh_token_value()
         ip, ua = _extract_request_meta(request)
@@ -213,7 +230,7 @@ class AuthService:
         # Rotate: revoke old, issue new
         await self.auth_repo.delete_session(raw_refresh)
         new_access = create_access_token(
-            subject=str(user.id), extra=_build_jwt_extra(user)
+            subject=str(user.id), extra=await _build_jwt_extra(user, self.product_access_repo)
         )
         new_raw_refresh = create_refresh_token_value()
         ip, ua = _extract_request_meta(request)
@@ -310,7 +327,7 @@ class AuthService:
         await self.user_repo.update_last_login(user.id)
 
         jwt_token = create_access_token(
-            subject=str(user.id), extra=_build_jwt_extra(user)
+            subject=str(user.id), extra=await _build_jwt_extra(user, self.product_access_repo)
         )
         raw_refresh = create_refresh_token_value()
         ip, ua = _extract_request_meta(request)

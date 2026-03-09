@@ -2,10 +2,11 @@
 Middleware stack.
 
 Execution order in main.py (outermost → innermost):
-  1. request_logging_middleware     — measures total wall-clock time, logs after response
-  2. product_identification_middleware — sets request.state.product/.user_id, enforces 403
-  3. rate_limit_middleware           — per-IP sliding-window rate limiter
-  4. CORSMiddleware                  — CORS headers (added via app.add_middleware)
+  1. request_logging_middleware        — measures total wall-clock time, logs after response
+  2. product_identification_middleware — identifies product via X-Product-Client-Key header,
+                                         validates Origin, enforces 401/403
+  3. rate_limit_middleware             — per-IP sliding-window rate limiter
+  4. CORSMiddleware                    — CORS headers (added via app.add_middleware)
 
 All three are plain async middleware functions registered with @app.middleware("http").
 They execute in definition order: first defined = outermost.
@@ -14,12 +15,21 @@ request.state fields set by this module:
   .product    str | None  — product identifier ("alpha", "taskboard", …) or None
   .user_id    str | None  — UUID string from JWT claims (no DB hit) or None
   .start_time float       — perf_counter value, set by logging middleware
+
+Product identification:
+  Every request (except passthrough routes) must carry an X-Product-Client-Key header.
+  The middleware looks up this key in the shared.product_clients table to identify
+  which product the request belongs to. This prevents clients from self-reporting
+  their product identifier.
+
+  In development (ENVIRONMENT=development), localhost origins are always allowed.
 """
+import fnmatch
 import logging
 import time
 from typing import Callable, Dict
 
-from fastapi import HTTPException, Request, Response, status
+from fastapi import Request, Response, status
 from jose import JWTError
 
 from app.core.config import settings
@@ -39,7 +49,8 @@ _SHARED_PREFIXES = frozenset({
     "/api/notifications",
 })
 
-_PASSTHROUGH_PREFIXES = ("/health", "/docs", "/redoc", "/openapi.json", "/")
+_PASSTHROUGH_PREFIXES = ("/health", "/docs", "/redoc", "/openapi.json")
+_PASSTHROUGH_EXACT = frozenset({"/"})  # exact match only
 
 
 # ---------------------------------------------------------------------------
@@ -124,33 +135,57 @@ async def request_logging_middleware(request: Request, call_next: Callable) -> R
 
 
 # ---------------------------------------------------------------------------
+# Helpers — Origin validation
+# ---------------------------------------------------------------------------
+def _is_origin_allowed(origin: str | None, allowed_origins: list[str]) -> bool:
+    """
+    Return True if the origin is permitted.
+    In development mode, any localhost origin is always allowed.
+    Supports wildcard patterns via fnmatch (e.g. "http://localhost:*").
+    """
+    if settings.environment == "development":
+        if not origin:
+            return True
+        if origin.startswith("http://localhost") or origin.startswith("http://127.0.0.1"):
+            return True
+
+    if not origin:
+        # Non-browser clients (Postman, server-to-server) — allow in dev, check in prod
+        return settings.environment == "development"
+
+    return any(fnmatch.fnmatch(origin, pattern) for pattern in allowed_origins)
+
+
+# ---------------------------------------------------------------------------
 # 2. Product Identification Middleware
 # ---------------------------------------------------------------------------
 async def product_identification_middleware(
     request: Request, call_next: Callable
 ) -> Response:
     """
-    Identifies the product being accessed and validates JWT product claims.
+    Identifies the product via the X-Product-Client-Key header and validates
+    the request Origin against the client's allowed_origins list.
 
     Sets on request.state:
       .product  — product identifier ("alpha", "taskboard", …) or None
       .user_id  — str(UUID) from JWT, or None
 
-    Access check logic:
-      - If the path targets a known product (/api/<product>/...):
-          - Decode JWT (no DB hit)
-          - If JWT present AND valid:
-              - Check payload["products"] includes the product
-              - If not → 403 Forbidden
-      - Shared platform routes (/api/auth/*, /api/billing/*, etc.) are skipped
-      - If no JWT is present on a product route, pass through —
-        get_current_user() will return 401 as appropriate
+    Rules:
+      - Passthrough routes (health, docs): skipped entirely.
+      - All other routes: X-Product-Client-Key is required.
+          - 401 if header is missing or key is unknown/inactive.
+          - 403 if Origin doesn't match allowed_origins (skipped in development).
+      - Product-specific routes (/api/<product>/...): additionally validate
+          JWT products claim when a token is present.
 
-    Why not 401 here?
-      This middleware only enforces product-level authorization for users
-      who ARE authenticated but lack access. Unauthenticated requests are
-      handled by the get_current_user dependency on each route.
+    Why not enforce JWT here for product routes?
+      Unauthenticated requests are handled by get_current_user() on each route.
+      This middleware only enforces product-level authorization for authenticated
+      users who lack access to the product.
     """
+    from app.core.database import AsyncSessionFactory
+    from app.shared.repos.product_client_repo import ProductClientRepo
+
     path = request.url.path
 
     # Initialize state
@@ -162,26 +197,58 @@ async def product_identification_middleware(
     if claims:
         request.state.user_id = claims.get("sub")
 
-    # Skip check for non-product routes
-    if _is_shared_or_passthrough(path):
+    # Passthrough — skip all checks
+    if path in _PASSTHROUGH_EXACT or path.startswith(_PASSTHROUGH_PREFIXES):
         return await call_next(request)
 
-    # Identify product from URL segment
-    product = _extract_product(path)
-    request.state.product = product
+    # --- Client key validation ---
+    client_key = request.headers.get("X-Product-Client-Key")
+    if not client_key:
+        return Response(
+            content='{"detail":"Missing X-Product-Client-Key header"}',
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            media_type="application/json",
+        )
 
-    if product is None:
-        # Unknown /api/<segment>/ — not a registered product, pass through
-        return await call_next(request)
+    async with AsyncSessionFactory() as session:
+        repo = ProductClientRepo(session)
+        client = await repo.get_by_client_key(client_key)
 
-    # Validate product access claim when a token is present
-    if claims is not None:
+    if not client:
+        return Response(
+            content='{"detail":"Invalid or inactive client key"}',
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            media_type="application/json",
+        )
+
+    # --- Origin validation ---
+    origin = request.headers.get("origin")
+    if not _is_origin_allowed(origin, client.allowed_origins):
+        logger.warning(
+            "Origin rejected | key=%s origin=%s allowed=%s",
+            client_key[:12],
+            origin,
+            client.allowed_origins,
+        )
+        return Response(
+            content='{"detail":"Origin not allowed for this client key"}',
+            status_code=status.HTTP_403_FORBIDDEN,
+            media_type="application/json",
+        )
+
+    # Set product from the trusted DB lookup
+    request.state.product = client.product
+
+    # --- Product-route JWT claim check ---
+    # For /api/<product>/... routes, additionally verify the JWT grants access.
+    url_product = _extract_product(path)
+    if url_product is not None and claims is not None:
         allowed: list[str] = claims.get("products") or []
-        if product not in allowed:
+        if url_product not in allowed:
             logger.warning(
                 "Product access denied | user=%s product=%s allowed=%s",
                 claims.get("sub", "?"),
-                product,
+                url_product,
                 allowed,
             )
             return Response(

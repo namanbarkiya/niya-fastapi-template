@@ -18,16 +18,13 @@ class CreateCustomerRequest(BaseModel):
 
 class SubscribeRequest(BaseModel):
     plan_id: uuid.UUID
-    product: str
 
 
 class CancelSubscriptionRequest(BaseModel):
-    product: str
     reason: Optional[str] = None
 
 
 class ChangePlanRequest(BaseModel):
-    product: str
     new_plan_id: uuid.UUID
 
 
